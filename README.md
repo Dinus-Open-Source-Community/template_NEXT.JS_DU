@@ -2,7 +2,7 @@
 # 📚 Template Project Doscom University (DU)
 
 Repository ini berisi **template project** untuk kebutuhan proker **Doscom University (DU)**.
-Tujuan utama template ini adalah **mempermudah pengerjaan tugas** dengan stack modern (Next.js, NestJS, Prisma, dan MySQL), sehingga peserta bisa langsung fokus ke implementasi fitur tanpa harus setup dari awal.
+Tujuan utama template ini adalah **mempermudah pengerjaan tugas** dengan stack modern (Next.js,  Prisma, dan MySQL), sehingga peserta bisa langsung fokus ke implementasi fitur tanpa harus setup dari awal.
 
 ---
 
