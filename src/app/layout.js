@@ -1,5 +1,5 @@
-import "./styles/globals.css";
-import Providers from "./styles/providers";
+import "../styles/globals.css";
+import Providers from "../styles/providers";
 import { Montserrat } from "next/font/google";
 
 const montserrat = Montserrat({
