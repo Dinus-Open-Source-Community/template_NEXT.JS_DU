@@ -1,0 +1,93 @@
+/**
+ * Puzzle API Todo
+ * 
+ * Berikut ada 3 potongan kode (A, B, C).
+ * Tugas kamu: tempatkan masing-masing potongan
+ * ke dalam function yang sesuai di `route.js`:
+ *
+ * - POST(request)   → untuk menambah todo baru
+ * - PUT(request)    → untuk mengubah todo
+ * - DELETE(request) → untuk menghapus todo
+ *
+ * Petunjuk:
+ * - Kalau butuh `title` & `userId`, berarti itu POST.
+ * - Kalau butuh `id, title, completed`, berarti itu PUT.
+ * - Kalau butuh `searchParams` & `id` dari URL, berarti itu DELETE.
+ */
+
+//////////////////////////
+// 🔹 POTONGAN A
+//////////////////////////
+const body = await request.json();
+const { title, userId } = body;
+
+const userData = await prisma.user.findUnique({
+    where: { id: userId }
+});
+
+const todoData = await prisma.todo.create({
+    data: {
+        title: title,
+        completed: false,
+        userId: userData.id,
+    }
+});
+
+return new Response(JSON.stringify({
+    success: true,
+    data: {
+        id: todoData.id,
+        title: todoData.title,
+        completed: todoData.completed,
+        createdAt: todoData.createdAt,
+        userId: todoData.userId,
+    }
+}), {
+    status: 201,
+    headers: { 'Content-Type': 'application/json' }
+});
+
+
+//////////////////////////
+// 🔹 POTONGAN B
+//////////////////////////
+const body = await request.json();
+const { id, title, completed } = body;
+
+const todoData = await prisma.todo.update({
+    where: { id },
+    data: { title, completed }
+});
+
+return new Response(JSON.stringify({
+    success: true,
+    data: {
+        id: todoData.id,
+        title: todoData.title,
+        completed: todoData.completed,
+        createdAt: todoData.createdAt,
+        userId: todoData.userId,
+    }
+}), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+});
+
+
+//////////////////////////
+// 🔹 POTONGAN C
+//////////////////////////
+const { searchParams } = new URL(request.url);
+const id = searchParams.get('id');
+
+await prisma.todo.delete({
+    where: { id }
+});
+
+return new Response(JSON.stringify({
+    success: true,
+    data: null
+}), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+});
