@@ -1,5 +1,6 @@
-import prisma from '@/utility/db/prisma'; // Import Prisma client untuk koneksi database
-import bcrypt from 'bcrypt' // Import bcrypt untuk hashing & validasi password
+import prisma from "@/utility/db/prisma"; // Import Prisma client untuk koneksi database
+import bcrypt from "bcrypt"; // Import bcrypt untuk hashing & validasi password
+import jwt from "jsonwebtoken";
 
 // Handler untuk request HTTP POST
 export async function POST(request) {
@@ -10,8 +11,8 @@ export async function POST(request) {
     // Cari user berdasarkan email di database
     const userData = await prisma.user.findUnique({
         where: {
-            email: email
-        }
+            email: email,
+        },
     });
 
     // Jika user ditemukan
@@ -21,39 +22,58 @@ export async function POST(request) {
 
         if (isValid) {
             // Jika password cocok → login sukses
-            return new Response(JSON.stringify({
-                success: true,
-                data: {
-                    id: userData.id,       // ID user
-                }
-            }), {
-                status: 200, // OK
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            // tambahkan jwt token ke header
+            const token = jwt.sign(
+                { id: userData.id, email: userData.email },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "1h", // jwt expired in 1 hour
+                },
+            );
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    message: "Login sukses",
+                    data: {
+                        id: userData.id, // ID user
+                    },
+                    token: token,
+                }),
+                {
+                    status: 200, // OK
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
         } else {
             // Jika password salah → login gagal
-            return new Response(JSON.stringify({
-                success: false,
-                data: null,
-            }), {
-                status: 401, // Unauthorized
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    data: null,
+                }),
+                {
+                    status: 401, // Unauthorized
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
         }
         // Jika user tidak ditemukan
     } else {
-        return new Response(JSON.stringify({
-            success: false,
-            data: null,
-        }), {
-            status: 401, // Unauthorized
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        return new Response(
+            JSON.stringify({
+                success: false,
+                data: null,
+            }),
+            {
+                status: 401, // Unauthorized
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            },
+        );
     }
 }
