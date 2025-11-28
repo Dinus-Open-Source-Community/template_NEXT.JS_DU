@@ -1,51 +1,62 @@
-import prisma from "@/utility/db/prisma"; // Import Prisma client untuk interaksi database
-import bcrypt from "bcrypt"; // Import bcrypt untuk hashing password
+import prisma from "@/utility/db/prisma";
+import bcrypt from "bcrypt";
 
 // Handler untuk request HTTP POST (registrasi user baru)
 export async function POST(request) {
-  // Ambil body JSON dari request
-  const body = await request.json();
-  const { name, email, password } = body; // Destruktur data user (name, email, password)
-
-  // Hash password sebelum disimpan ke database (salt round = 10)
-  const hashPassword = await bcrypt.hash(password, 10);
-
   try {
-    // Simpan user baru ke database
-    await prisma.user.create({
-      data: {
-        name, // Nama user
-        email, // Email user
-        password: hashPassword, // Password sudah di-hash
-      },
+    const body = await request.json();
+    const { name, email, password } = body;
+
+    // Validasi input sederhana
+    if (!name || !email || !password) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Nama, email, dan password wajib diisi",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Cek apakah email sudah ada
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
     });
 
-    // Jika berhasil → kirim response sukses dengan status 201 (Created)
+    if (existingUser) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Email sudah terdaftar",
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } } // 409 Conflict
+      );
+    }
+
+    // Hash password
+    const hashPassword = await bcrypt.hash(password, 10);
+
+    // Simpan user baru
+    const newUser = await prisma.user.create({
+      data: { name, email, password: hashPassword },
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
-        data: null,
+        message: "Registrasi berhasil",
+        data: { id: newUser.id, name: newUser.name, email: newUser.email },
       }),
-      {
-        status: 201, // Created
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
+      { status: 201, headers: { "Content-Type": "application/json" } }
     );
-  } catch {
-    // Jika terjadi error (misalnya email sudah ada / DB error) → return response gagal
+  } catch (err) {
+    console.error("Error saat registrasi:", err);
     return new Response(
       JSON.stringify({
         success: false,
-        data: null,
+        message: "Terjadi kesalahan server",
       }),
-      {
-        status: 500, // Internal Server Error
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
