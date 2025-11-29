@@ -43,38 +43,38 @@ export async function GET(request) {
 
 // POST: tambah todo baru
 export async function POST(request) {
-  try {
-    const body = await request.json();
-    console.log("POST body received:", body);
+  // Taruh Potongan Kode yang sesuai di sini (berada pada file puzzle.txt)
+  const body = await request.json();
+  const { title, userId } = body;
 
-    const { title, userId } = body;
+  const userData = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
-    if (!title || !userId) {
-      return new Response(JSON.stringify({ success: false, message: "Title atau userId kosong" }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-    }
+  const todoData = await prisma.todo.create({
+    data: {
+      title: title,
+      completed: false,
+      userId: userData.id,
+    },
+  });
 
-    const userData = await prisma.user.findUnique({ where: { id: Number(userId) } });
-    console.log("Found user:", userData);
-
-    if (!userData) {
-      return new Response(JSON.stringify({ success: false, message: "User tidak ditemukan" }), { status: 404, headers: { 'Content-Type': 'application/json' } });
-    }
-
-    const todoData = await prisma.todo.create({
+  return new Response(
+    JSON.stringify({
+      success: true,
       data: {
-        title,
-        completed: false,
-        userId: userData.id,
+        id: todoData.id,
+        title: todoData.title,
+        completed: todoData.completed,
+        createdAt: todoData.createdAt,
+        userId: todoData.userId,
       },
-    });
-
-    console.log("Created todo:", todoData);
-
-    return new Response(JSON.stringify({ success: true, data: todoData }), { status: 201, headers: { 'Content-Type': 'application/json' } });
-  } catch (err) {
-    console.error("POST error:", err);
-    return new Response(JSON.stringify({ success: false, message: err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-  }
+    }),
+    {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }
 
 // PUT: update todo
