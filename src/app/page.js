@@ -1,53 +1,152 @@
-import React from 'react';
+'use client'
+
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import TaskColumn from '../components/TaskColumn';
 import TaskCard from '../components/TaskCard';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@heroui/react";
+import TextInput from '../components/TextInput';
+
+// Fungsi decode JWT
+function decodeToken(token) {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload));
+  } catch (err) {
+    console.error("Failed to decode token:", err);
+    return null;
+  }
+}
 
 export default function Home() {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  // Ambil token dari localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const user = token ? decodeToken(token) : null;
+  const userId = user?.id;
+
+  // Fetch tasks
+  useEffect(() => {
+    async function fetchTasks() {
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/todos`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        console.log("Backend response:", data);
+        if (res.ok && data.success) setTasks(data.data);
+        else console.error("Backend error:", data);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTasks();
+  }, [token]);
+
+  // Tambah task baru
+  async function addTask() {
+    if (!newTaskTitle || !token || !userId) return;
+
+    try {
+      const res = await fetch('/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: newTaskTitle, userId })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTasks(prev => [data.data, ...prev]);
+        setNewTaskTitle('');
+        onOpenChange(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Delete task
+  async function deleteTask(id) {
+    try {
+      const res = await fetch(`/api/todos?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) setTasks(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
     <main className="flex h-screen bg-[#F6F7FB] overflow-hidden font-sans text-gray-800">
       <Sidebar />
-
-      {/* Main Content Area */}
       <section className="flex-1 p-8 h-screen flex flex-col">
         <Header />
 
-        {/* Grid Container */}
-        <div className="grid grid-cols-3 gap-8 flex-1 overflow-hidden pb-4">
+        {/* Modal Add Task */}
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader>Add New Task</ModalHeader>
+                <ModalBody>
+                  <TextInput
+                    label="Task Title"
+                    placeholder="Enter new task..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                  />
+                </ModalBody>
+                <ModalFooter>
+                  <Button color="danger" variant="light" onPress={onClose}>Cancel</Button>
+                  <Button color="primary" onPress={addTask}>Add</Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
 
-          {/* --- KOLOM 1: WORK --- */}
-          <TaskColumn title="Work" colorClass="bg-blue-500" completed={1} total={3}>
-            <TaskCard title="Meeting with a client" desc="John Doe from TechX company" time="12:00 - 13:00" type="work" />
-            <TaskCard title="WebHeroes" desc="Prepare new screen for D-Form" time="Until 16:00" type="work" />
-
-            {/* Pembatas Done */}
-            <div className="border-t-2 border-dashed border-gray-200 my-4 relative">
-              <span className="absolute left-1/2 -top-3 -translate-x-1/2 bg-[#F6F7FB] px-2 text-xs text-gray-400 font-bold">DONE</span>
-            </div>
-
-            <TaskCard title="Trustedoctor" desc="Make all fixes" time="8:00 - 12:00" type="work" isDone={true} />
+        {/* Single Column (semua tasks) */}
+        <div className="grid grid-cols-1 gap-8 flex-1 overflow-hidden pb-4">
+          <TaskColumn
+            title="All Tasks"
+            colorClass="bg-blue-500"
+            completed={tasks.filter(t => t.completed).length}
+            total={tasks.length}
+            onAddTaskClick={onOpen}
+          >
+            {loading ? (
+              <p>Loading...</p>
+            ) : (
+              tasks.map(t => (
+                <TaskCard
+                  key={t.id}
+                  title={t.title}
+                  desc="" // kosong karena backend belum punya
+                  time={new Date(t.createdAt).toLocaleString()}
+                  type="" // kosong
+                  isDone={t.completed}
+                  onDelete={() => deleteTask(t.id)}
+                />
+              ))
+            )}
           </TaskColumn>
-
-          {/* --- KOLOM 2: HOME --- */}
-          <TaskColumn title="Home" colorClass="bg-yellow-500" completed={0} total={3}>
-            <TaskCard title="Grocery shopping" desc="Shopping list: 2 x Rolls, apple juice." time="17:00 - 18:00" type="home" />
-            <TaskCard title="Dinner" desc="Chicken wings & hot sauce." time="20:00 - 21:00" type="home" />
-            <TaskCard title="Walk the dog" desc="Keliling UDINUS aja bentar" time="22:00 - 23:00" type="home" />
-          </TaskColumn>
-
-          {/* --- KOLOM 3: OTHER --- */}
-          <TaskColumn title="Other" colorClass="bg-purple-500" completed={0} total={2}>
-            <TaskCard title="Meeting with friends" desc="At Green Beer Pub" time="From 23:00" type="other" />
-
-            {/* Pembatas Done */}
-            <div className="border-t-2 border-dashed border-gray-200 my-4 relative">
-              <span className="absolute left-1/2 -top-3 -translate-x-1/2 bg-[#F6F7FB] px-2 text-xs text-gray-400 font-bold">DONE</span>
-            </div>
-
-            <TaskCard title="Give camera back" desc="Return to Michael" time="Until 10:00" type="done" isDone={true} />
-          </TaskColumn>
-
         </div>
       </section>
     </main>

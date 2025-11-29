@@ -1,6 +1,9 @@
+// 'use client'
+
 import { Geist, Geist_Mono } from 'next/font/google'
 import '@/styles/globals.css'
 import { HeroProvider } from '@/providers/HeroProvider'
+// import { ToastProvider } from "@heroui/react"
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -21,7 +24,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <HeroProvider>{children}</HeroProvider>
+        <HeroProvider>
+          {/* <ToastProvider> */}
+          {children}
+          {/* </ToastProvider> */}
+        </HeroProvider>
       </body>
     </html>
   )

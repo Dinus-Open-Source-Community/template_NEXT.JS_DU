@@ -31,11 +31,9 @@ export default function Page() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await res.json()
-
-      if (!res.ok || !data.success) {
-        setErrorMsg(data.message || "Email atau password salah")
-        return
+      const data = await res.json();
+      if (res.ok && data.success) {
+        localStorage.setItem('token', data.data.token); // simpan token
       }
 
       // simpan token di state

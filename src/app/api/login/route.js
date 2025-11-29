@@ -35,12 +35,12 @@ export async function POST(request) {
                     success: true,
                     message: "Login sukses",
                     data: {
-                        id: userData.id, // ID user
+                        id: userData.id,
+                        token: token, // kirim token juga di body
                     },
-                    token: token,
                 }),
                 {
-                    status: 200, // OK
+                    status: 200,
                     headers: {
                         "Content-Type": "application/json",
                     },
