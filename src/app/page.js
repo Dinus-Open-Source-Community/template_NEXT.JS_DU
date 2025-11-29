@@ -30,6 +30,8 @@ export default function Home() {
   const user = token ? decodeToken(token) : null;
   const userId = user?.id;
 
+  console.log(token, userId);
+
   // Fetch tasks
   useEffect(() => {
     async function fetchTasks() {

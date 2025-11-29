@@ -2,11 +2,11 @@ import { NextResponse } from "next/server"; // Import NextResponse untuk mengont
 import jwt from "jsonwebtoken";
 
 // Middleware akan berjalan untuk setiap request sebelum masuk ke route tujuan
-export function proxy(request) {
+export function middleware(request) {
   const { pathname } = request.nextUrl; // Ambil path dari request
   // Daftar path publik yang tidak butuh autentikasi
   const publicPaths = [
-    "/",
+    // "/",
     "/login",
     "/register",
     "/api/login",

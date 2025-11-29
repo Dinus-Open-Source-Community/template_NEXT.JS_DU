@@ -5,13 +5,14 @@ import BgLogin from "@/../public/assets/bg_login.svg"
 import BgText from "@/../public/assets/bg_text.svg"
 import logoSumbar from "@/../public/assets/logos/logo_DU.png"
 import IconHand from "@/../public/assets/hand_icon.svg"
-import TextInput from "@/components/TextInput"
-import Button from "@/components/Button"
 import Link from "next/link"
-import SpinnerLoading from "@/components/SpinnerLoading"
 import { useState } from "react"
 import { registerUser } from "@/services/auth"
 import { useRouter } from "next/navigation"
+
+import TextInput from "@/components/TextInput"
+import Button from "@/components/Button"
+import SpinnerLoading from "@/components/SpinnerLoading"
 
 export default function Page() {
   const router = useRouter()
