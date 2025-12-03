@@ -1,4 +1,4 @@
-import { prisma } from "../../../../lib/prisma";
+import prisma from "@/utility/db/prisma";
 import bcrypt from "bcrypt";
 
 // Handler untuk request HTTP POST (registrasi user baru)

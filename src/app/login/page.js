@@ -1,64 +1,69 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import BgLogin from "@/../public/assets/bg_login.svg"
-import BgText from "@/../public/assets/bg_text.svg"
-import logoSumbar from "@/../public/assets/logos/logo_DU.png"
-import IconHand from "@/../public/assets/hand_icon.svg"
-import TextInput from "@/components/TextInput"
-import Button from "@/components/Button"
-import Link from "next/link"
-import SpinnerLoading from "@/components/SpinnerLoading"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import Image from "next/image";
+import BgLogin from "@/../public/assets/bg_login.svg";
+import BgText from "@/../public/assets/bg_text.svg";
+import logoSumbar from "@/../public/assets/logos/logo_DU.png";
+import IconHand from "@/../public/assets/hand_icon.svg";
+import TextInput from "@/components/TextInput";
+import Button from "@/components/Button";
+import Link from "next/link";
+import SpinnerLoading from "@/components/SpinnerLoading";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
-  const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [errorMsg, setErrorMsg] = useState("")
-  const [token, setToken] = useState(null)
-  const router = useRouter()
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [token, setToken] = useState(null);
+  const router = useRouter();
 
   async function handleLogin() {
-    setLoading(true)
-    setErrorMsg("")
+    setLoading(true);
+    setErrorMsg("");
 
     try {
       const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        localStorage.setItem('token', data.data.token); // simpan token
+        localStorage.setItem("token", data.token); // simpan token
+        document.cookie = `token=${data.token}; path=/; max-age=3600; SameSite=Lax`;
       }
 
-      // simpan token di state
-      setToken(data.token)
-
-      router.push("/")
+      setToken(data.token);
     } catch (err) {
-      console.error(err)
-      setErrorMsg("Terjadi kesalahan server")
+      console.error(err);
+      setErrorMsg("Terjadi kesalahan server");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (token) {
+      router.push("/");
+      console.log("Login berhasil, token disimpan:", token);
+    }
+  }, [token, router]);
 
   return (
     <main className="relative flex flex-col min-h-dvh lg:min-h-screen md:px-32">
       <Image
         src={BgLogin}
         alt="Background Image"
-        fill
+        layout="fill"
+        objectFit="cover"
         className="absolute top-0 left-0 w-full h-full object-cover"
       />
 
       <div className="flex max-w-sm lg:max-w-5xl w-full my-auto mx-auto gap-20 lg:ml-auto md:shadow-xl p-6 md:p-12 rounded-2xl bg-white z-10">
-
         {/* SIDE IMAGE */}
         <div className="h-full w-full relative hidden lg:block">
           <Image src={BgText} alt="bg text" />
@@ -103,9 +108,7 @@ export default function Page() {
             />
           </div>
 
-          {errorMsg && (
-            <div className="text-red-600 text-sm mb-3">{errorMsg}</div>
-          )}
+          {errorMsg && <div className="text-red-600 text-sm mb-3">{errorMsg}</div>}
 
           <div className="flex gap-0.5 mb-12 text-xs">
             <span>belum memiliki akun?</span>
@@ -116,12 +119,14 @@ export default function Page() {
 
           <Button
             onClick={handleLogin}
-            className={`bg-blue-900 hover:bg-blue-950 ${loading ? "bg-blue-950" : ""} w-full text-center font-bold justify-center`}
+            className={`bg-blue-900 hover:bg-blue-950 ${
+              loading ? "bg-blue-950" : ""
+            } w-full text-center font-bold justify-center`}
           >
             {loading ? <SpinnerLoading /> : "Login"}
           </Button>
         </div>
       </div>
     </main>
-  )
+  );
 }

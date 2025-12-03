@@ -1,17 +1,17 @@
-'use client'
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import TaskColumn from '../components/TaskColumn';
-import TaskCard from '../components/TaskCard';
+import React, { useEffect, useState } from "react";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import TaskColumn from "../components/TaskColumn";
+import TaskCard from "../components/TaskCard";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@heroui/react";
-import TextInput from '../components/TextInput';
+import TextInput from "../components/TextInput";
 
 // Fungsi decode JWT
 function decodeToken(token) {
   try {
-    const payload = token.split('.')[1];
+    const payload = token.split(".")[1];
     return JSON.parse(atob(payload));
   } catch (err) {
     console.error("Failed to decode token:", err);
@@ -26,11 +26,9 @@ export default function Home() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   // Ambil token dari localStorage
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const user = token ? decodeToken(token) : null;
   const userId = user?.id;
-
-  console.log(token, userId);
 
   // Fetch tasks
   useEffect(() => {
@@ -40,10 +38,10 @@ export default function Home() {
       setLoading(true);
       try {
         const res = await fetch(`/api/todos`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        console.log("Backend response:", data);
+
         if (res.ok && data.success) setTasks(data.data);
         else console.error("Backend error:", data);
       } catch (err) {
@@ -61,19 +59,19 @@ export default function Home() {
     if (!newTaskTitle || !token || !userId) return;
 
     try {
-      const res = await fetch('/api/todos', {
-        method: 'POST',
+      const res = await fetch("/api/todos", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title: newTaskTitle, userId })
+        body: JSON.stringify({ title: newTaskTitle, userId }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setTasks(prev => [data.data, ...prev]);
-        setNewTaskTitle('');
+        setTasks((prev) => [data.data, ...prev]);
+        setNewTaskTitle("");
         onOpenChange(false);
       }
     } catch (err) {
@@ -85,11 +83,11 @@ export default function Home() {
   async function deleteTask(id) {
     try {
       const res = await fetch(`/api/todos?id=${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok && data.success) setTasks(prev => prev.filter(t => t.id !== id));
+      if (res.ok && data.success) setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -116,8 +114,12 @@ export default function Home() {
                   />
                 </ModalBody>
                 <ModalFooter>
-                  <Button color="danger" variant="light" onPress={onClose}>Cancel</Button>
-                  <Button color="primary" onPress={addTask}>Add</Button>
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Cancel
+                  </Button>
+                  <Button color="primary" onPress={addTask}>
+                    Add
+                  </Button>
                 </ModalFooter>
               </>
             )}
@@ -129,14 +131,14 @@ export default function Home() {
           <TaskColumn
             title="All Tasks"
             colorClass="bg-blue-500"
-            completed={tasks.filter(t => t.completed).length}
+            completed={tasks.filter((t) => t.completed).length}
             total={tasks.length}
             onAddTaskClick={onOpen}
           >
             {loading ? (
               <p>Loading...</p>
             ) : (
-              tasks.map(t => (
+              tasks.map((t) => (
                 <TaskCard
                   key={t.id}
                   title={t.title}

@@ -10,6 +10,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     // Hapus token JWT dari localStorage
     localStorage.removeItem('token')
+    document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
     // Redirect ke halaman login
     router.push('/login')
   }

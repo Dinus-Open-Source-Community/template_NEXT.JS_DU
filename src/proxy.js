@@ -1,81 +1,72 @@
-import { NextResponse } from "next/server"; // Import NextResponse untuk mengontrol response di middleware
+import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
-// Middleware akan berjalan untuk setiap request sebelum masuk ke route tujuan
 export function proxy(request) {
-  const { pathname } = request.nextUrl; // Ambil path dari request
+  const { pathname } = request.nextUrl;
 
-  // Daftar path publik yang tidak butuh autentikasi
+  // 1. Path yang bebas akses
   const isApi = pathname.startsWith("/api");
   const publicPages = ["/login", "/register"];
   const publicApi = ["/api/login", "/api/register"];
 
-  console.log("Middleware aktif untuk path:", pathname);
+  console.log(`Middleware cek path: ${pathname}`);
 
-  // jika public page diizinkan atau bisa langsung di akses
-  if (!isApi && publicPages.includes(pathname)) {
+  // Bypass halaman publik
+  if (publicPages.includes(pathname) || publicApi.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // jika public api diizinkan atau bisa langsung di akses
-  if (isApi && publicApi.includes(pathname)) {
-    return NextResponse.next();
-  }
+  // 2. AMBIL TOKEN (Hybrid: Header untuk API, Cookie untuk Web)
+  let token;
 
-  // Ambil header Authorization dari request -> ambil token
+  // Cek Header (Authorization: Bearer xyz)
   const authHeader = request.headers.get("authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
 
-  // Jika tidak ada Authorization atau formatnya salah → unauthorized
-
-  if (
-    !authHeader ||
-    !authHeader.startsWith("Bearer ") ||
-    authHeader.split(" ").length !== 2
-  ) {
-    if (isApi) {
-      // jika yang di akses adalah api
-      return NextResponse.json(
-        // -> return json dengan message Unauthorized
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+  // Cek Cookie (Jika header kosong)
+  if (!token) {
+    const cookieToken = request.cookies.get("token"); // Ambil cookie bernama 'token'
+    if (cookieToken) {
+      token = cookieToken.value;
     }
+  }
 
-    // jika yang diakses bukan api tapi page -> redirect ke login
+  // 3. JIKA TOKEN KOSONG
+  if (!token) {
+    if (isApi) {
+      return NextResponse.json({ success: false, message: "Unauthorized: No Token" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // validasi token
-  const token = authHeader.split(" ")[1];
+  // 4. VERIFIKASI TOKEN (Pakai jsonwebtoken)
   try {
-    // verify the token
+    // jwt.verify akan throw error jika token invalid/expired
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // set datanya ke request header
+    // Token valid! Lanjut...
     const response = NextResponse.next();
-    response.headers.set("user_id", decoded.id);
+    
+    // Opsional: Kirim data user ke backend lewat header baru
+    response.headers.set("user_id", decoded.id); 
+    response.headers.set("user_email", decoded.email);
 
     return response;
-  } catch (err) {
-    if (isApi) {
-      // jika yang di akses adalah api
-      return NextResponse.json(
-        // -> return json dengan message Unauthorized
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
 
-    // jika yang diakses bukan api tapi page -> redirect ke login
+  } catch (err) {
+    console.error("JWT Error:", err.message);
+
+    if (isApi) {
+      return NextResponse.json({ success: false, message: "Unauthorized: Invalid Token" }, { status: 401 });
+    }
+    // Jika token expired/salah saat buka web, lempar ke login
     return NextResponse.redirect(new URL("/login", request.url));
   }
 }
 
-// Config middleware: matcher menentukan request mana saja yang akan dicegat```
 export const config = {
-  matcher: [
-    // Semua route kecuali api default, file static, dan favicon
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  // Matcher standar (exclude static files)
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
-

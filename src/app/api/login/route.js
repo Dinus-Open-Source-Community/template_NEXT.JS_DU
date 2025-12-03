@@ -1,4 +1,4 @@
-import { prisma } from "../../../../lib/prisma";
+import prisma from "@/utility/db/prisma";
 import bcrypt from "bcrypt"; // Import bcrypt untuk hashing & validasi password
 import jwt from "jsonwebtoken";
 
@@ -37,7 +37,7 @@ export async function POST(request) {
           data: {
             id: userData.id, // ID user
           },
-          // token: token,
+          token: token,
         }),
         {
           status: 200, // OK
