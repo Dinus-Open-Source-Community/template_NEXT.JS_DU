@@ -270,7 +270,6 @@ export default function Home() {
     }
 
     fetchTasks();
-    console.log("TOKEN:", token);
   }, [token]);
 
   return (
